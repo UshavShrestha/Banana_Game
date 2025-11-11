@@ -1,36 +1,188 @@
+/* ===== General Styles ===== */
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
   text-align: center;
   background: #f0f0f0;
+  color: #333;
 }
 
+/* ===== Header / HUD ===== */
 header {
   background-color: #ffcc00;
-  padding: 15px 0;
+  padding: 10px 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-#puzzleContainer {
-  margin-top: 50px;
+header h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #222;
+}
+
+#hud span {
+  margin: 0 15px;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+/* ===== Buttons ===== */
+button, .logoutBtn {
+  padding: 6px 12px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  transition: 0.2s;
+}
+
+button:hover, .logoutBtn:hover {
+  background-color: #ffdd33;
+}
+
+.logoutBtn {
+  text-decoration: none;
+  background-color: #e74c3c;
+  color: white;
+}
+
+/* ===== Canvas ===== */
+#gameCanvas {
+  display: block;
+  margin: 20px auto;
+  border: 2px solid #000;
+  background: url('assets/background.png') repeat-x;
+}
+
+/* ===== Puzzle Modal ===== */
+.modal {
+  display: none;
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 2px solid #333;
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  z-index: 100;
 }
 
 #puzzleImage {
-  margin-bottom: 15px;
+  margin: 15px 0;
 }
 
 input[type="text"] {
   padding: 8px;
   font-size: 16px;
+  width: 200px;
+  margin-bottom: 10px;
 }
 
-button {
+/* ===== Auth Pages (Login/Register/Error) ===== */
+.auth-container {
+  width: 350px;
+  margin: 100px auto;
+  padding: 30px;
+  background-color: #ffcc00;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+.auth-container h2 {
+  margin-bottom: 20px;
+  color: #222;
+  font-size: 28px;
+}
+
+.auth-container input[type="text"],
+.auth-container input[type="password"] {
+  width: 80%;
+  padding: 10px;
+  margin: 10px 0;
+  font-size: 16px;
+  border: 2px solid #333;
+  border-radius: 5px;
+}
+
+.auth-container button {
+  background-color: #222;
+  color: #ffcc00;
+  border: none;
   padding: 10px 20px;
   font-size: 16px;
-  margin-top: 10px;
+  border-radius: 5px;
   cursor: pointer;
+  margin-top: 10px;
+  transition: 0.2s;
 }
 
-#result {
-  margin-top: 20px;
+.auth-container button:hover {
+  background-color: #444;
+}
+
+.auth-container p {
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.auth-container a {
+  text-decoration: none;
+  color: #222;
   font-weight: bold;
-  font-size: 18px;
+}
+
+.auth-container a:hover {
+  color: #e74c3c;
+}
+
+/* ===== Game Instructions ===== */
+#instructions {
+  margin: 25px auto;
+  padding: 18px;
+  max-width: 650px;
+  background-color: #fff;
+  border: 2px solid #ffcc00;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  text-align: left;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+#instructions h3 {
+  margin: 0 0 15px 0;
+  color: #222;
+  font-size: 22px;
+  text-align: center;
+  border-bottom: 2px solid #ffcc00;
+  padding-bottom: 8px;
+}
+
+#instructions p {
+  margin: 10px 0;
+  color: #333;
+}
+
+#instructions strong {
+  color: #e74c3c;
+}
+
+/* ===== Responsive tweaks ===== */
+@media (max-width: 400px) {
+  .auth-container {
+    width: 90%;
+    margin: 50px auto;
+    padding: 20px;
+  }
+
+  #gameCanvas {
+    width: 95%;
+    height: auto;
+  }
 }
