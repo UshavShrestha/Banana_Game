@@ -17,32 +17,56 @@ $score = $_SESSION['score'] ?? 0;
   <header>
     <h1>Banana Runner</h1>
     <div id="hud">
-      <span>User: <?php echo htmlspecialchars($_SESSION['username']); ?></span>
-      <span>Score: <span id="score"><?php echo intval($score); ?></span></span>
+      <span>User: <?php echo $_SESSION['username']; ?></span>
+      <span>Score: <span id="score"><?php echo $score; ?></span></span>
+      <button id="pauseBtn">Pause</button>
       <a href="logout.php" class="logoutBtn">Logout</a>
     </div>
   </header>
 
   <main>
     <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <!-- Start Game Button -->
+    <div id="startContainer">
+      <button id="startGameBtn">Start Game</button>
+    </div>
+
+    <!-- === INSTRUCTIONS SECTION (Added) === -->
     <div id="instructions">
       <h3>How to Play</h3>
-      <p>Press <strong>SPACEBAR</strong> to jump. Hitting an obstacle opens a banana puzzle. Solve to gain points.</p>
+      <p>• Use <strong>SPACEBAR</strong> to jump over obstacles.</p>
+      <p>• When you hit an obstacle, a <strong>banana puzzle</strong> will appear!</p>
+      <p>• Solve it correctly to earn <strong>+10 points</strong>.</p>
+      <p>• A wrong answer deducts <strong>5 points</strong>.</p>
+      <p>• Run, jump, and solve to beat your high score!</p>
     </div>
   </main>
 
-  <!-- Puzzle Modal -->
+  <!-- Puzzle Modal (unchanged, still centered) -->
   <div id="puzzleModal" class="modal">
     <h3>Banana Puzzle!</h3>
     <img id="puzzleImage" src="" alt="Banana puzzle" width="300"><br>
     <input type="text" id="answerInput" placeholder="Your Answer">
-    <button id="puzzleSubmitBtn">Submit</button>
+    <button onclick="submitAnswer()">Submit</button>
   </div>
 
   <script src="game.js"></script>
   <script>
-    // game.js reads score from DOM; ensure running starts automatically
-    window.running = true;
+    let running = false;
+    const startBtn = document.getElementById('startGameBtn');
+    const startContainer = document.getElementById('startContainer');
+    const pauseBtn = document.getElementById('pauseBtn');
+
+    startBtn.addEventListener('click', () => {
+      running = true;
+      startContainer.style.display = 'none';
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      running = !running;
+      pauseBtn.textContent = running ? "Pause" : "Resume";
+    });
   </script>
 </body>
 </html>

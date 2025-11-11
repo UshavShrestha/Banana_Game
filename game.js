@@ -10,12 +10,13 @@ let bgSpeed = 3;
 
 // ===== Player Setup =====
 let player = { x: 50, y: 320, vy: 0, jumping: false };
-let gravity = 0.5;
-window.running = (typeof window.running !== 'undefined') ? window.running : true;
-let score = parseInt(document.getElementById("score").innerText) || 0;
+let gravity = 0.8;
+window.running = false; // global for start/pause
+let score = parseInt(document.getElementById("score").innerText);
+
 
 // ===== Player Animation =====
-let playerFrames = [], currentFrame = 0, frameCounter = 0, frameDelay = 12;
+let playerFrames = [], currentFrame = 0, frameCounter = 0, frameDelay = 15;
 for (let i = 1; i <= 3; i++) {
     let img = new Image();
     img.src = `assets/player_run${i}.png`;
@@ -30,7 +31,7 @@ obstacleImages[1].src = "assets/obs_2.png";
 obstacleImages[2].src = "assets/obs_3.png";
 obstacleImages[3].src = "assets/obs_4.png";
 let obstacleTimer = 0;
-let obstacleInterval = 240;
+let obstacleInterval = 300;
 
 // ===== Puzzle Variables =====
 let correctAnswer = "";
@@ -38,16 +39,8 @@ let puzzleActive = false;
 
 // ===== Draw Player =====
 function drawPlayer() {
-    // Draw current frame (if loaded)
-    const frame = playerFrames[currentFrame];
-    if (frame.complete && frame.naturalWidth !== 0) {
-        ctx.drawImage(frame, player.x, player.y, 90, 90);
-    } else {
-        ctx.fillStyle = "blue";
-        ctx.fillRect(player.x, player.y, 40, 40);
-    }
-
-    if (window.running && !puzzleActive) {
+    ctx.drawImage(playerFrames[currentFrame], player.x, player.y, 90, 90);
+    if (running && !puzzleActive) {
         frameCounter++;
         if (frameCounter >= frameDelay) {
             currentFrame = (currentFrame + 1) % playerFrames.length;
@@ -58,7 +51,7 @@ function drawPlayer() {
 
 // ===== Fetch Puzzle =====
 function fetchPuzzle() {
-    window.running = false;
+    running = false;
     puzzleActive = true;
     fetch("proxy.php")
         .then(res => res.json())
@@ -67,110 +60,100 @@ function fetchPuzzle() {
             correctAnswer = String(data.solution).trim();
             document.getElementById("puzzleModal").style.display = "block";
         })
-        .catch(err => {
-            console.error("Error fetching puzzle:", err);
-            // Resume if API fails
-            window.running = true;
-            puzzleActive = false;
-        });
+        .catch(err => console.error("Error fetching puzzle:", err));
 }
 
 // ===== Update Function =====
 function update() {
-    if (!window.running) return;
+    if (!running) return;
 
-    // Jump physics
-    if (player.jumping) {
-        player.vy += gravity;
-        player.y += player.vy;
-        if (player.y >= 320) {
-            player.y = 320;
-            player.jumping = false;
-        }
+   // Jump physics (slower jump)
+if (player.jumping) {
+    player.vy += 0.5; // slower fall
+    player.y += player.vy;
+    if (player.y >= 320) {
+        player.y = 320;
+        player.jumping = false;
     }
+}
+
 
     // Scroll background
     bgX -= bgSpeed;
     if (bgX <= -canvas.width) bgX = 0;
 
-    // Spawn random obstacles (biased to ground)
-    obstacleTimer++;
-    if (obstacleTimer > obstacleInterval) {
-        const randomType = Math.floor(Math.random() * obstacleImages.length);
-        const obstacleWidth = 70;
-        const obstacleHeight = 70;
-        const groundLevel = 320;
+// ===== Spawn random obstacles (random height levels) =====
+obstacleTimer++;
+if (obstacleTimer > obstacleInterval) {
+    const randomType = Math.floor(Math.random() * obstacleImages.length);
+    const obstacleWidth = 70;
+    const obstacleHeight = 70;
+    const groundLevel = 320;
 
-        const possibleHeights = [
-            groundLevel,                       // common ground
-            groundLevel,                       // duplicate biases ground
-            groundLevel - obstacleHeight,      // just above ground
-            groundLevel - obstacleHeight - 70, // mid-air
-            groundLevel - obstacleHeight - 130 // higher
-        ];
-        const obstacleY = possibleHeights[Math.floor(Math.random() * possibleHeights.length)];
+    // Generate random Y levels
+    const possibleHeights = [
+        groundLevel,
+        groundLevel,
+        groundLevel - obstacleHeight,
+        groundLevel - obstacleHeight - 70,
+        groundLevel - obstacleHeight - 130
+    ];
+    const obstacleY = possibleHeights[Math.floor(Math.random() * possibleHeights.length)];
 
-        obstacles.push({
-            x: canvas.width + 50,
-            y: obstacleY,
-            width: obstacleWidth,
-            height: obstacleHeight,
-            image: obstacleImages[randomType],
-            triggered: false
-        });
+    obstacles.push({
+        x: canvas.width + 50,
+        y: obstacleY,
+        width: obstacleWidth,
+        height: obstacleHeight,
+        image: obstacleImages[randomType],
+        triggered: false
+    });
 
-        obstacleTimer = 0;
-        obstacleInterval = 180 + Math.random() * 260;
-    }
+    obstacleTimer = 0;
+    obstacleInterval = 200 + Math.random() * 300;
+}
 
-    // Move obstacles and collision detection
+
+
+    // Move obstacles
     obstacles.forEach(ob => {
         ob.x -= bgSpeed;
 
-        // collision detection (loose tolerance)
-        const tol = 8;
+        // Collision detection 
+        const tolerance = 5;
         if (!ob.triggered &&
-            player.x + 60 > ob.x + tol &&
-            player.x + 20 < ob.x + ob.width - tol &&
-            player.y + 80 > ob.y + tol &&
-            player.y < ob.y + ob.height - tol
+            player.x + 50 - tolerance > ob.x &&
+            player.x + 40 + tolerance < ob.x + ob.width &&
+            player.y + 90 > ob.y + tolerance &&
+            player.y < ob.y + ob.height - tolerance
         ) {
             ob.triggered = true;
-            setTimeout(fetchPuzzle, 100);
+
+            // Show puzzle after small delay to render obstacle
+            setTimeout(fetchPuzzle, 50);
         }
     });
 
-    // cleanup
-    obstacles = obstacles.filter(ob => ob.x + ob.width > -10);
+    // Remove off-screen obstacles
+    obstacles = obstacles.filter(ob => ob.x + ob.width > 0);
 }
+
 
 // ===== Render Function =====
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Background (loop)
-    if (bg.complete && bg.naturalWidth !== 0) {
-        ctx.drawImage(bg, bgX, 0, canvas.width, canvas.height);
-        ctx.drawImage(bg, bgX + canvas.width, 0, canvas.width, canvas.height);
-    } else {
-        ctx.fillStyle = "#a0d8ff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
+    // Background
+    ctx.drawImage(bg, bgX, 0, canvas.width, canvas.height);
+    ctx.drawImage(bg, bgX + canvas.width, 0, canvas.width, canvas.height);
 
     // Obstacles
-    obstacles.forEach(ob => {
-        if (ob.image.complete && ob.image.naturalWidth !== 0) {
-            ctx.drawImage(ob.image, ob.x, ob.y, ob.width, ob.height);
-        } else {
-            ctx.fillStyle = "red";
-            ctx.fillRect(ob.x, ob.y, ob.width, ob.height);
-        }
-    });
+    obstacles.forEach(ob => ctx.drawImage(ob.image, ob.x, ob.y, ob.width, ob.height));
 
     // Player
     drawPlayer();
 
-    // HUD (score)
+    // Score
     document.getElementById("score").innerText = score;
 }
 
@@ -184,37 +167,40 @@ gameLoop();
 
 // ===== Controls =====
 document.addEventListener("keydown", function(e){
-    if (e.code === "Space" && !player.jumping && window.running && !puzzleActive) {
+    if(e.code === "Space" && !player.jumping && running && !puzzleActive){
         player.vy = -13;
         player.jumping = true;
     }
 });
 
-// ===== Puzzle Submit Handler =====
-document.getElementById("puzzleSubmitBtn").addEventListener("click", function() {
+// ===== Puzzle Answer =====
+function submitAnswer() {
     const userAnswer = document.getElementById("answerInput").value.trim();
-    if (userAnswer === correctAnswer) score += 10;
-    else score -= 5;
+    if(userAnswer === correctAnswer) score += 10;
+    if(userAnswer !== correctAnswer) score -= 5;
 
     alert(userAnswer === correctAnswer ? "✅ Correct!" : "❌ Wrong! Answer: " + correctAnswer);
 
+    // Hide puzzle
     document.getElementById("puzzleModal").style.display = "none";
     document.getElementById("answerInput").value = "";
 
-    // Update HUD immediately
+    // Update HUD
     document.getElementById("score").innerText = score;
 
-    // Save to DB
+    running = true;
+    puzzleActive = false;
+
+    // Send score to server
     fetch("save_score.php", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: "score=" + score
     })
     .then(res => res.text())
-    .then(data => console.log("Score saved:", data))
+    .then(data => {
+        console.log("Score saved:", data);
+    })
     .catch(err => console.error("Error saving score:", err));
+}
 
-    // Resume game
-    puzzleActive = false;
-    window.running = true;
-});
