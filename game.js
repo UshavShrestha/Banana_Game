@@ -14,7 +14,6 @@ let gravity = 0.8;
 window.running = false; // global for start/pause
 let score = parseInt(document.getElementById("score").innerText);
 
-
 // ===== Player Animation =====
 let playerFrames = [], currentFrame = 0, frameCounter = 0, frameDelay = 15;
 for (let i = 1; i <= 3; i++) {
