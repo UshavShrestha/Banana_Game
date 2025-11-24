@@ -36,15 +36,47 @@ function drawPlayer() {
     }
 }
 
-// Puzzle control variables
+// Puzzle variables
 let correctAnswer = "";
 let puzzleActive = false;
 
-// Generate 5–10 sec random interval
+// Random interval (5–10s)
 function getRandomTime() {
     return 5000 + Math.random() * 5000;
 }
 let nextPuzzleTime = Date.now() + getRandomTime();
+
+//Generate 4 options including correct answer
+function generateOptions(correct) {
+    let opts = new Set([correct]);
+
+    while (opts.size < 4) {
+        let wrong = correct + Math.floor(Math.random() * 10 - 5);
+        if (wrong > 0) opts.add(wrong);
+    }
+
+    return Array.from(opts).sort(() => Math.random() - 0.5);
+}
+
+// 3-second countdown before puzzle appears
+function startPuzzleCountdown() {
+    let count = 3;
+
+    const countdownEl = document.getElementById("countdown");
+    countdownEl.style.display = "block";
+    countdownEl.innerText = count;
+
+    let timer = setInterval(() => {
+        count--;
+        countdownEl.innerText = count;
+
+        if (count <= 0) {
+            clearInterval(timer);
+            countdownEl.style.display = "none";
+            fetchPuzzle();
+        }
+    }, 1000);
+}
 
 // Fetch a puzzle from backend
 function fetchPuzzle() {
@@ -55,7 +87,22 @@ function fetchPuzzle() {
         .then(res => res.json())
         .then(data => {
             document.getElementById("puzzleImage").src = data.question;
+
             correctAnswer = String(data.solution).trim();
+
+            // Generate options
+            const opts = generateOptions(parseInt(correctAnswer));
+            let container = document.getElementById("optionsContainer");
+            container.innerHTML = "";
+
+            opts.forEach(opt => {
+                let btn = document.createElement("button");
+                btn.className = "optionBtn";
+                btn.innerText = opt;
+                btn.onclick = () => selectOption(opt);
+                container.appendChild(btn);
+            });
+
             document.getElementById("puzzleModal").style.display = "block";
         })
         .catch(err => console.error("Puzzle fetch error:", err));
@@ -65,7 +112,6 @@ function fetchPuzzle() {
 function update() {
     if (!running) return;
 
-    // Jump physics
     if (player.jumping) {
         player.vy += 0.5;
         player.y += player.vy;
@@ -76,33 +122,30 @@ function update() {
         }
     }
 
-    // Background movement
     bgX -= bgSpeed;
     if (bgX <= -canvas.width) bgX = 0;
 
-    // Trigger puzzle when timer reaches next interval
-    if (!puzzleActive && Date.now() >= nextPuzzleTime) {
-        fetchPuzzle();
-        nextPuzzleTime = Date.now() + getRandomTime();
-    }
+    // Only trigger puzzle when game is running
+if (running && !puzzleActive && Date.now() >= nextPuzzleTime) {
+    startPuzzleCountdown();
+    nextPuzzleTime = Date.now() + getRandomTime();
+}
+
 }
 
 // Render visuals
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Background
     ctx.drawImage(bg, bgX, 0, canvas.width, canvas.height);
     ctx.drawImage(bg, bgX + canvas.width, 0, canvas.width, canvas.height);
 
-    // Player
     drawPlayer();
 
-    // HUD
     document.getElementById("score").innerText = score;
 }
 
-// Main game loop
+// Game loop
 function gameLoop() {
     update();
     render();
@@ -118,24 +161,21 @@ document.addEventListener("keydown", function(e) {
     }
 });
 
-// Handle puzzle answer submission
-function submitAnswer() {
-    const userAnswer = document.getElementById("answerInput").value.trim();
+// Select option (no typing needed)
+function selectOption(option) {
+    let userAnswer = String(option);
+    let correct = (userAnswer === correctAnswer);
 
-    // Score update
-    if (userAnswer === correctAnswer) score += 10;
-    else score -= 5;
+    score += correct ? 10 : -5;
 
-    alert(userAnswer === correctAnswer ? "✅ Correct!" : "❌ Wrong! Answer: " + correctAnswer);
+    alert(correct ? "✅ Correct!" : "❌ Wrong! Correct answer was: " + correctAnswer);
 
-    // Close puzzle
     document.getElementById("puzzleModal").style.display = "none";
-    document.getElementById("answerInput").value = "";
 
     running = true;
     puzzleActive = false;
 
-    // Save updated score
+    // Save score
     fetch("save_score.php", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },

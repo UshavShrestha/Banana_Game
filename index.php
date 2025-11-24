@@ -27,31 +27,45 @@ $score = $_SESSION['score'] ?? 0;
   <main>
     <canvas id="gameCanvas" width="800" height="400"></canvas>
 
-    <!-- Start Game Button -->
     <div id="startContainer">
       <button id="startGameBtn">Start Game</button>
     </div>
 
-    <!-- === INSTRUCTIONS SECTION (Added) === -->
+    <div id="countdown" style="
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 80px;
+    font-weight: bold;
+    color: red;
+    display: none;
+"></div>
+
+
     <div id="instructions">
       <h3>How to Play</h3>
-      <p>• Use <strong>SPACEBAR</strong> to jump over obstacles.</p>
-      <p>• When you hit an obstacle, a <strong>banana puzzle</strong> will appear!</p>
-      <p>• Solve it correctly to earn <strong>+10 points</strong>.</p>
-      <p>• A wrong answer deducts <strong>5 points</strong>.</p>
-      <p>• Run, jump, and solve to beat your high score!</p>
+      <p>• Use <strong>SPACEBAR</strong> to jump.</p>
+      <p>• A <strong>banana puzzle</strong> appears randomly (5–10 sec).</p>
+      <p>• Correct answer = <strong>+10 points</strong>.</p>
+      <p>• Wrong answer = <strong>-5 points</strong>.</p>
+      <p>• Run, jump, solve!</p>
     </div>
   </main>
 
-  <!-- Puzzle Modal (unchanged, still centered) -->
+  <!-- UPDATED PUZZLE MODAL -->
   <div id="puzzleModal" class="modal">
     <h3>Banana Puzzle!</h3>
-    <img id="puzzleImage" src="" alt="Banana puzzle" width="300"><br>
-    <input type="text" id="answerInput" placeholder="Your Answer">
-    <button onclick="submitAnswer()">Submit</button>
+
+    <!-- Puzzle Image -->
+    <img id="puzzleImage" src="" alt="Banana puzzle" width="300"><br><br>
+
+    <!-- Multiple-choice buttons injected here -->
+    <div id="optionsContainer"></div>
   </div>
 
   <script src="game.js"></script>
+
   <script>
     let running = false;
     const startBtn = document.getElementById('startGameBtn');
