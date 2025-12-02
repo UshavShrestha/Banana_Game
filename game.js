@@ -34,10 +34,12 @@ function drawPlayer() {
     }
 }
 
+let randomtime = Math.floor(Math.random() * 5000) + 5000;
+
 // Puzzle variables
 let correctAnswer = "";
 let puzzleActive = false;
-let puzzleInterval = 10000; // puzzle every 10 seconds
+let puzzleInterval = randomtime;
 let nextPuzzleTime = Date.now() + puzzleInterval;
 let countdownTriggered = false;
 
@@ -79,7 +81,7 @@ function fetchPuzzle() {
     puzzleActive = true;
     countdownTriggered = false;
 
-    fetch("proxy.php")
+    fetch("services/proxy.php")
         .then(res => res.json())
         .then(data => {
             document.getElementById("puzzleImage").src = data.question;
@@ -124,12 +126,9 @@ function update() {
     // Puzzle timing logic
     const now = Date.now();
 
-    // When 3 secs remain → show countdown
     if (!puzzleActive && !countdownTriggered && now >= nextPuzzleTime - 3000) {
         startPuzzleCountdown();
     }
-
-    // Countdown will call fetchPuzzle() when it reaches 0
 }
 
 // Render
@@ -173,11 +172,9 @@ function selectOption(option) {
     puzzleActive = false;
     running = true;
 
-    // Restart 10s timer ONLY after game resumes
     nextPuzzleTime = Date.now() + puzzleInterval;
 
-    // Save score
-    fetch("save_score.php", {
+    fetch("services/save_score.php", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: "score=" + score
@@ -186,3 +183,40 @@ function selectOption(option) {
     .then(data => console.log("Score saved:", data))
     .catch(err => console.error("Score save error:", err));
 }
+
+// ----- Leaderboard Fetching with Highlight -----
+function fetchLeaderboard() {
+    fetch("services/leaderboard.php")
+        .then(res => res.json())
+        .then(data => {
+            const lb = document.getElementById("leaderboardList");
+            lb.innerHTML = "";
+            data.forEach(player => {
+                const li = document.createElement("li");
+                li.textContent = `${player.username} - ${player.score}`;
+                if(player.username === currentUser){
+                    li.style.color = "#e74c3c";
+                    li.style.fontWeight = "bold";
+                }
+                lb.appendChild(li);
+            });
+        })
+        .catch(err => console.error("Leaderboard fetch error:", err));
+}
+
+// Initial fetch
+fetchLeaderboard();
+
+// Refresh leaderboard every 5 seconds
+setInterval(fetchLeaderboard, 5000);
+
+// ----- Start/Stop controls -----
+document.getElementById('startGameBtn').addEventListener('click', () => {
+    running = true;
+    document.getElementById('startContainer').style.display = 'none';
+});
+
+document.getElementById('pauseBtn').addEventListener('click', () => {
+    running = !running;
+    document.getElementById('pauseBtn').textContent = running ? "Pause" : "Resume";
+});
