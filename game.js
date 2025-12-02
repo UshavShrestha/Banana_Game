@@ -2,28 +2,26 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Background setup
+// Background
 let bg = new Image();
 bg.src = "assets/background.png";
 let bgX = 0;
 let bgSpeed = 3;
 
-// Player setup
+// Player
 let player = { x: 50, y: 320, vy: 0, jumping: false };
 let gravity = 0.8;
 window.running = false;
 let score = parseInt(document.getElementById("score").innerText);
 
-// Player animation frames
+// Player animation
 let playerFrames = [], currentFrame = 0, frameCounter = 0, frameDelay = 15;
-
 for (let i = 1; i <= 3; i++) {
     let img = new Image();
     img.src = `assets/player_run${i}.png`;
     playerFrames.push(img);
 }
 
-// Draw animated player
 function drawPlayer() {
     ctx.drawImage(playerFrames[currentFrame], player.x, player.y, 90, 90);
 
@@ -39,14 +37,11 @@ function drawPlayer() {
 // Puzzle variables
 let correctAnswer = "";
 let puzzleActive = false;
+let puzzleInterval = 10000; // puzzle every 10 seconds
+let nextPuzzleTime = Date.now() + puzzleInterval;
+let countdownTriggered = false;
 
-// Random interval (5–10s)
-function getRandomTime() {
-    return 5000 + Math.random() * 5000;
-}
-let nextPuzzleTime = Date.now() + getRandomTime();
-
-//Generate 4 options including correct answer
+// Generate options
 function generateOptions(correct) {
     let opts = new Set([correct]);
 
@@ -54,12 +49,12 @@ function generateOptions(correct) {
         let wrong = correct + Math.floor(Math.random() * 10 - 5);
         if (wrong > 0) opts.add(wrong);
     }
-
     return Array.from(opts).sort(() => Math.random() - 0.5);
 }
 
-// 3-second countdown before puzzle appears
+// 3-second countdown before puzzle
 function startPuzzleCountdown() {
+    countdownTriggered = true;
     let count = 3;
 
     const countdownEl = document.getElementById("countdown");
@@ -78,20 +73,19 @@ function startPuzzleCountdown() {
     }, 1000);
 }
 
-// Fetch a puzzle from backend
+// Fetch puzzle
 function fetchPuzzle() {
     running = false;
     puzzleActive = true;
+    countdownTriggered = false;
 
     fetch("proxy.php")
         .then(res => res.json())
         .then(data => {
             document.getElementById("puzzleImage").src = data.question;
-
             correctAnswer = String(data.solution).trim();
 
-            // Generate options
-            const opts = generateOptions(parseInt(correctAnswer));
+            let opts = generateOptions(parseInt(correctAnswer));
             let container = document.getElementById("optionsContainer");
             container.innerHTML = "";
 
@@ -108,10 +102,11 @@ function fetchPuzzle() {
         .catch(err => console.error("Puzzle fetch error:", err));
 }
 
-// Update game state
+// Game update loop
 function update() {
     if (!running) return;
 
+    // Physics
     if (player.jumping) {
         player.vy += 0.5;
         player.y += player.vy;
@@ -122,18 +117,22 @@ function update() {
         }
     }
 
+    // Background
     bgX -= bgSpeed;
     if (bgX <= -canvas.width) bgX = 0;
 
-    // Only trigger puzzle when game is running
-if (running && !puzzleActive && Date.now() >= nextPuzzleTime) {
-    startPuzzleCountdown();
-    nextPuzzleTime = Date.now() + getRandomTime();
+    // Puzzle timing logic
+    const now = Date.now();
+
+    // When 3 secs remain → show countdown
+    if (!puzzleActive && !countdownTriggered && now >= nextPuzzleTime - 3000) {
+        startPuzzleCountdown();
+    }
+
+    // Countdown will call fetchPuzzle() when it reaches 0
 }
 
-}
-
-// Render visuals
+// Render
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -141,7 +140,6 @@ function render() {
     ctx.drawImage(bg, bgX + canvas.width, 0, canvas.width, canvas.height);
 
     drawPlayer();
-
     document.getElementById("score").innerText = score;
 }
 
@@ -161,7 +159,7 @@ document.addEventListener("keydown", function(e) {
     }
 });
 
-// Select option (no typing needed)
+// Option selection
 function selectOption(option) {
     let userAnswer = String(option);
     let correct = (userAnswer === correctAnswer);
@@ -172,8 +170,11 @@ function selectOption(option) {
 
     document.getElementById("puzzleModal").style.display = "none";
 
-    running = true;
     puzzleActive = false;
+    running = true;
+
+    // Restart 10s timer ONLY after game resumes
+    nextPuzzleTime = Date.now() + puzzleInterval;
 
     // Save score
     fetch("save_score.php", {
