@@ -5,6 +5,13 @@
   <title>Login - Banana Puzzle</title>
   <link rel="stylesheet" href="styles.css">
 </head>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('registered') === '1') {
+      alert("✅ Registration successful! Please login.");
+  }
+</script>
+
 <body>
   <div class="auth-container">
     <h2>Login</h2>

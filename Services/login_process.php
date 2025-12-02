@@ -15,7 +15,7 @@ if($result->num_rows === 1){
     if(password_verify($password, $user['password'])){
         $_SESSION['username'] = $username;
         $_SESSION['score'] = $user['score'];
-        header("Location: index.php"); // redirect to puzzle page
+        header("Location: ../index.php");
         exit;
     } else {
         echo "Wrong password! <a href='login.html'>Try again</a>";
